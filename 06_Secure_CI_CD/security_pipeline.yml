@@ -1,0 +1,29 @@
+name: BuildSecure Guard
+
+on: [push, pull_request]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1. Détection de secrets oubliés
+      - name: Secret Detection
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+
+      # 2. Analyse des dépendances (SCA)
+      - name: Dependency Check (Python)
+        run: |
+          pip install safety
+          safety check # Vérifie les vulnérabilités dans requirements.txt
+
+      # 3. Analyse Statique du Code (SAST)
+      - name: SAST with Bandit
+        run: |
+          pip install bandit
+          bandit -r . -ll # Scan récursif, échoue si faille de niveau "Low" ou plus
